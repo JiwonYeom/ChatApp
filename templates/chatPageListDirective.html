@@ -1,0 +1,42 @@
+<div class="chat_container grid_list">
+  <div class="load_more">
+    <div class="load_more_btn" ng-click="loadMore()">더 보기</div>
+  </div>
+  <ul class="list-unstyled">
+    <li class="chat_item" ng-repeat="chat in chatArray">
+      <div class='prof_pic'>
+        <div class="user_ident">
+          <div class="user_init">{{chat.author_name[0]}}</div>
+        </div>
+      </div>
+      <div class="chat_view">
+        <div class='person_info'>
+          <span class="name">{{chat.author_name}}</span>
+          <span class="date">{{chat.changed * 1000 | date:"yyyy/MM/dd 'at' h:mma"}}</span>
+        </div>
+        <div class="message">{{chat.message}}</div>
+        <div class="import_file ng-hide" ng-show="{{chat.file_type != null}}">
+          <span class="file_icon ng-hide glyphicon glyphicon-save" ng-show="{{chat.file_type != 'image' && chat.file_type != null}}"></span>
+          <div class="filename ng-hide" ng-show="{{chat.file_type != null}}">
+            <a href="{{chat.file_path}}" download>{{chat.file_name}}</a>
+          </div>
+          <!-- if file -->
+          <div class="file ng-hide" ng-show="{{chat.file_type != 'image' && chat.file_type != null}}"></div>
+          <!-- if image -->
+          <div class="image ng-hide" ng-show="{{chat.file_type == 'image'}}">
+            <img ng-src="{{chat.file_path}}" alt="chat image"/>
+          </div>
+        </div>
+        <div class="msg_setting btn-group">
+          <button type="button" class="chat_edit glyphicon glyphicon-edit btn" ng-show="{{chat.uid == user}}" ng-click='editChat($index)'></button>
+          <button type="button" class="chat_del glyphicon glyphicon-trash btn" ng-show="{{chat.uid == user}}" ng-click='deleteChat($index)'></button>
+        </div>
+      </div>
+    </li>
+    <div ng-show="edit==true">
+        <input class="form-control" ng-model = "currentEditMsg"/>
+        <div class="btn btn-primary" ng-click="executeEdit()">확인</div>
+        <div class="btn btn-danger" ng-click="closeEdit()">취소</div>
+    </div>
+  </ul>
+</div>

@@ -1,0 +1,23 @@
+<div class="chatform_container panel panel-default">
+  <div class="panel-body">
+    <form class="add_chat inline-form" ng-submit="chatSubmit()" name="file">
+      <div class="input-group">
+        <span class="input-group-btn">
+          <button type="button" class="chat_filebtn btn btn-default" ngf-select ng-model="file" name="file">
+            <span class="glyphicon glyphicon-plus"></span>
+          </button>
+        </span>
+        <input type="text" class="chat_text form-control" ng-model="msg" name="msg" />
+        <label class="chat_submitbtn input-group-addon glyphicon glyphicon-pencil" for="submit"></label>
+      </div>
+      <input type="submit" class="chat_submit" id="submit" value="Submit" name="submit"/>
+    </form>
+    <form name="form">
+      <div class="button chat_file" ngf-select ng-model="file" name="file">Select File</div>
+      <!-- 이미지가 있을 경우 보여주는 preview -->
+      <img ngf-thumbnail="file">
+      <!-- 일일 경우 보여줄 div 요소(생성예정) -->
+      <div>{{file.name}}</div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,52 @@
+<?php
+function community_chat_schema() {
+   $schema['community_chat_channel'] = array(
+    'description' => t('Chat channel information'),
+    'fields' => array(
+      // Primary key //
+      'cid' => array(
+        'description' => t('The primary identifier for SR schema.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // Channel Name //
+      'channel_name' => array(
+        'type' => 'varchar',
+        'length' => 255
+      ),
+      // Author //
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // group ID //
+      'gid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      // created //
+      'created' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      // updated //
+      'updated' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+    ),
+    'unique keys' => array(
+      'cid' => array('cid'),
+    ),
+    'primary key' => array('cid'),
+    'auto increment' => 1,
+  );
+   return $schema;
+}

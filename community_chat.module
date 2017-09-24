@@ -1,0 +1,335 @@
+<?php
+function community_chat_menu(){
+  $items = array();
+  //get channel
+  $items['api/retrieve/channel'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_general_channel_api',
+    'page arguments' => array(3),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // add channel
+  $items['api/add/channel'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_add_channel_api',
+    'page arguments' => array(3,4),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // delete channel
+  $items['api/delete/channel'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_delete_channel_api',
+    'page arguments' => array(3,4),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // get user info
+  $items['api/user'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_check_user_api',
+    'page arguments' => array(),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // create channel
+  $items['api/add/chat'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_add_chat_api',
+    'page arguments' => array(),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // chat message edit
+  $items['api/edit/chat'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_edit_chat_api',
+    'page arguments' => array(),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // chat message deletion
+  $items['api/delete/chat'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_delete_chat_api',
+    'page arguments' => array(3),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // get chat message list
+  $items['api/retrieve/chat'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_retrieve_chat_api',
+    'page arguments' => array(3,4),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // message search
+  $items['api/search/chat'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_chat_search_chat_api',
+    'page arguments' => array(),
+    'delivery callback' => 'drupal_json_output'
+    );
+  // get community info
+  $items['api/info'] = array(
+    'access arguments' => array('access content'),
+    'page callback'     => 'community_info_api',
+    'page arguments' => array(2),
+    'delivery callback' => 'drupal_json_output'
+    );
+  return $items;
+}
+
+// check user role
+function community_chat_init(){
+  global $base_url;
+  //allow only for current view accesses
+  $referer_url = $_SERVER['REQUEST_URI'];
+  $view_page = strpos($referer_url, 'chat-message-search');
+  if($view_page != false){
+    //find gid
+    $gid_exists = strpos($referer_url,'gid');
+    if($gid_exists != false){
+      //find uid
+      global $user;
+      $uid = $user->uid;
+      $start_idx = $gid_exists+4;
+      $end_idx = strpos($referer_url, '&message');
+      $gid = substr($referer_url, $start_idx, $end_idx-$start_idx);
+      $result = db_select('og_membership', 'o')
+      ->condition('entity_type', 'user', '=')
+      ->condition('etid', $uid, '=')
+      ->condition('gid', $gid, '=')
+      ->fields('o')
+      ->execute()
+      ->fetchAll();
+      //logging
+      watchdog('community_test', json_encode($result));
+      if(empty($result)){
+        drupal_goto($base_url);
+      }else{
+        return true;
+      }
+    }else{
+      drupal_goto($base_url);
+    }
+  }
+}
+
+//Check permissions
+function community_chat_check_permissions(){
+  global $user;
+  $uid = $user->uid;
+  $referer_url = $_SERVER['HTTP_REFERER'];
+  $url_arr = explode('/', $referer_url);
+  $gid = $url_arr[4];
+  $intial_permit = db_select('node', 'n')->condition('type', 'community', '=')->condition('uid', $user->uid, '=')->fields('n')->execute()->fetchAll();
+  $result = db_select('og_membership', 'o')
+  ->condition('entity_type', 'user', '=')
+  ->condition('etid', $uid, '=')
+  ->condition('gid', $gid, '=')
+  ->fields('o')
+  ->execute()
+  ->fetchAll();
+  if(!empty($result || !empty($initial_permit))){
+    return true;
+  }else{
+    return true;
+  }
+}
+
+// get channel
+function community_chat_general_channel_api($gid) {
+  $permit = community_chat_check_permissions();
+  if($permit){
+    //access to custom table
+    $channel_list = db_select('community_chat_channel', 'c')->condition('gid', $gid, '=')->fields('c')->execute()->fetchAll();
+    return $channel_list;
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+// create channel
+function community_chat_add_channel_api($gid,$name){
+  $permit = community_chat_check_permissions();
+  if($permit){
+    global $user;
+    $uid = $user->uid;
+    $time = time();
+    db_insert('community_chat_channel')->fields(array('channel_name'=>$name,'uid'=>$uid, 'gid' => $gid, 'created' => $time, 'updated' => $time))->execute();
+    $channel_list = db_select('community_chat_channel', 'c')->condition('gid', $gid, '=')->fields('c')->execute()->fetchAll();
+    return $channel_list;
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+//delete channel
+function community_chat_delete_channel_api($gid,$cid){
+  $permit = community_chat_check_permissions();
+  if($permit){
+    db_delete('community_chat_channel')->condition('cid', $cid, '=')->execute();
+    $channel_list = db_select('community_chat_channel', 'c')->condition('gid', $gid, '=')->fields('c')->execute()->fetchAll();
+    return $channel_list;
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+//add message
+function community_chat_add_chat_api(){
+  $permit = community_chat_check_permissions();
+  if($permit){
+    global $user;
+    $data = file_get_contents("php://input");
+    $data = json_decode($data, TRUE);
+    $message = $data['message'];
+    $cid = $data['cid'];
+    $gid = $data['gid'];
+    $title = "Chat Entry";
+    $type = "community_chat_message";
+    $language = $data['language'];
+    $chat_file = !empty($data['fid']) ? $data['fid'] : 0;
+    db_insert('eck_community_chat_message')->fields(array(
+      'title'=>$title,
+      'cid'=>$cid,
+      'gid'=>$gid,
+      'uid' => $user->uid,
+      'author_name' => $user->name,
+      'type' => $type,
+      'created' => REQUEST_TIME,
+      'changed' => REQUEST_TIME,
+      'language' => $language,
+      'message' => $message,
+      'chat_file' => $chat_file,
+      ))
+    ->execute();
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+//get message
+function community_chat_retrieve_chat_api($cid,$set){
+  $permit = community_chat_check_permissions();
+  if($permit){
+    $set_limit = $set * 10;
+    $chat_list = db_select('eck_community_chat_message', 'c')->condition('cid', $cid, '=')->fields('c')->orderBy('created', 'DESC')->range(0,$set_limit)->execute()->fetchAll();
+    $chat_list_new = array_reverse($chat_list);
+    foreach ($chat_list_new as $key => $value) {
+      if(isset($value->chat_file)){
+        $fid = $value->chat_file;
+        $file = file_load($fid);
+        if(isset($file->uri)){
+          $value->file_path = file_create_url($file->uri);
+          $value->file_type = $file->type;
+          $value->file_name = $file->filename;
+        }
+      }
+    }
+    return $chat_list_new;
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+// delete chat message
+function community_chat_delete_chat_api($id){
+  $permit = community_chat_check_permissions();
+  if($permit){
+    db_delete('eck_community_chat_message')->condition('id', $id, '=')->execute();
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+// edit chat message
+function community_chat_edit_chat_api(){
+  $permit = community_chat_check_permissions();
+  if($permit){
+      // get id and message from post
+    $data = file_get_contents("php://input");
+    $data = json_decode($data, TRUE);
+    $id = $data['chatId'];
+    $message = $data['message'];
+    db_update('eck_community_chat_message')->fields(array('message'=>$message, 'changed'=>REQUEST_TIME))->condition('id', $id, '=')->execute();
+    return 'update success';
+  }else{
+    return 'Inappropriate Permission';
+  }
+}
+
+// check user's uid
+function community_chat_check_user_api(){
+  global $user;
+  $uid = intval($user->uid);
+  return $uid;
+}
+
+function community_chat_theme($existing, $type, $theme, $path) {
+  return array(
+    //theme for user with permission
+    'community-chat-page' => array(
+      'template' => 'community-chat-page',
+      'variables' => array()
+      ),
+    //theme for user without permission
+    'community-chat-page-nopermit' => array(
+      'template' => 'community-chat-page-nopermit',
+      'variables' => array()
+      ),
+    );
+}
+
+function community_chat_block_info() {
+  $blocks['community_chat_block'] = array(
+    'info' => t('Community Chat'),
+    'region' => 'content',
+    'status' => 1,
+    'pages' => 'community-chat'
+    );
+
+  return $blocks;
+}
+
+// block view rendering
+function community_chat_block_view($delta = '') {
+  $block = array();
+  // check permission and show / hide block
+  global $user;
+  $intial_permit = db_select('node', 'n')->condition('type', 'community', '=')->condition('uid', $user->uid, '=')->fields('n')->execute()->fetchAll();
+  $permit_result = db_select('og_membership', 'o')->condition('entity_type', 'user', '=')->condition('etid', $user->uid, '=')->condition('gid', arg(1), '=')->fields('o')->execute()->fetchAll();
+  if(!empty($permit_result) || !empty($intial_permit)){
+    switch ($delta) {
+      case 'community_chat_block':
+      //$block['subject'] = t('Latest nodes');
+      $block['content'] = array(
+        '#theme' => 'community-chat-page',
+        );
+      break;
+    }
+  }else{
+   $msg = 'no permisson';
+   switch ($delta) {
+    case 'community_chat_block':
+    $block['content'] = array(
+      '#theme' => 'community-chat-page-nopermit');
+    break;
+  }
+}
+return $block;
+}
+
+function community_info_api($gid) {
+  $node = node_load($gid);
+  if(isset($node->field_community_image['und'][0]['fid'])){
+    $fid = $node->field_community_image['und'][0]['fid'];
+    $file = file_load($fid);
+    if(isset($file->uri)){
+      $imagepath = file_create_url($file->uri);
+    }
+  } else {
+    $default_path = 'public://default_images/default_img_0.png';
+    $imagepath = file_create_url($default_path);
+  }
+  return array(
+    'title' => $node->title,
+    'description' => $node->body['und'][0]['value'],
+    'imagepath' => $imagepath,
+    );
+}

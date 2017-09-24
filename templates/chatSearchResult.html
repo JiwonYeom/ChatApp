@@ -1,0 +1,35 @@
+<h3 class="search_title">"{{searchValue}}" 검색 결과</h3>
+<div class="serach_res">
+  <ul class="list-unstyled">
+    <li class="search_item" ng-repeat="sech in searchArray">
+      <h4 class="search_channel" ng-repeat="chan in channels | filter : {'cid' : sech.node.cid}">{{chan.channel_name}}</h4>
+      <div class="prof_pic">
+        <div class="user_ident">
+          <div class="user_init">{{sech.node.author_name[0]}}</div>
+        </div>
+      </div>
+      <div class="chat_view">
+        <div class="person_info">
+          <span class="name">{{sech.node.author_name}}</span>
+          <span class="date">{{sech.node.Changed | date:"yyyy/MM/dd 'at' h:mma"}}</span>
+        </div>
+        <div class="message">{{sech.node.Message}}</div>
+        <div class="import_file ng-hide" ng-show="{{sech.node.file_type != ''}}">
+          <span class="file_icon ng-hide glyphicon glyphicon-save" ng-show="{{sech.node.file_type != 'image' && sech.node.file_type != null}}"></span>
+          <div class="filename ng-hide" ng-show="{{sech.node.file_type != null}}">
+            <a href="{{sech.node.path}}" download>{{sech.node.file_name}}</a>
+          </div>
+          <!-- if file -->
+          <div class="file ng-hide" ng-show="{{sech.node.file_type != 'image' && sech.node.file_type != null}}"></div>
+          <!-- if image -->
+          <div class="image ng-hide" ng-show="{{sech.node.file_type == 'image'}}">
+            <img ng-src="{{sech.node.path}}" alt="sech image"/>
+          </div>
+        </div>
+      </div>
+    </li>
+    <li class="empty_res" ng-if="searchArray.length == 0">
+      <p>검색결과가 없습니다</p>
+    </li>
+  </ul>
+</div>
